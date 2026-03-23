@@ -205,8 +205,16 @@ Resources:
 
   McpFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: false
+        Target: es2022
+        Sourcemap: true
+        EntryPoints:
+          - src/index.ts
     Properties:
-      Handler: dist/index.handler
+      Handler: index.handler
       CodeUri: .
       Environment:
         Variables:
