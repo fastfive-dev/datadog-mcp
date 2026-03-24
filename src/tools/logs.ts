@@ -11,8 +11,8 @@ export function registerLogsTools(server: McpServer, client: DatadogClient): voi
       title: 'Search Datadog Logs',
       description: 'Search Datadog logs using query syntax, e.g. "status:error service:api env:production"',
       inputSchema: z.object({
-        query: z.string().describe('Datadog log query, e.g. "status:error service:api"'),
-        from: z.string().describe('Start time: epoch seconds or relative (e.g. "15m", "1h", "1d")'),
+        query: z.string().min(1).describe('Datadog log query, e.g. "status:error service:api"'),
+        from: z.string().min(1).describe('Start time: epoch seconds or relative (e.g. "15m", "1h", "1d")'),
         to: z.string().default('now').describe('End time. Default: "now"'),
         limit: z.number().min(1).max(200).default(50).describe('Max logs to return (1-200). Default: 50'),
         sort: z.enum(['timestamp', '-timestamp']).default('-timestamp').describe('Sort order. Default: "-timestamp" (newest first)'),

@@ -6,10 +6,17 @@ import { Socket } from 'net';
 import { DatadogClient } from './lib/datadog-client';
 import { registerMetricsTools } from './tools/metrics';
 import { registerLogsTools } from './tools/logs';
+import { registerMonitorsTools } from './tools/monitors';
+import { registerIncidentsTools } from './tools/incidents';
+import { registerApmTools } from './tools/apm';
+
+if (!process.env.DD_API_KEY || !process.env.DD_APP_KEY) {
+  throw new Error('DD_API_KEY and DD_APP_KEY environment variables are required');
+}
 
 const ddClient = new DatadogClient(
-  process.env.DD_API_KEY || '',
-  process.env.DD_APP_KEY || '',
+  process.env.DD_API_KEY,
+  process.env.DD_APP_KEY,
   process.env.DD_SITE || 'datadoghq.com',
 );
 
@@ -20,6 +27,9 @@ function createServer(): McpServer {
   });
   registerMetricsTools(server, ddClient);
   registerLogsTools(server, ddClient);
+  registerMonitorsTools(server, ddClient);
+  registerIncidentsTools(server, ddClient);
+  registerApmTools(server, ddClient);
   return server;
 }
 
@@ -27,6 +37,7 @@ function apiGatewayToReqRes(event: APIGatewayProxyEvent): {
   req: IncomingMessage;
   res: ServerResponse;
   getResponse: () => APIGatewayProxyResult;
+  cleanup: () => void;
 } {
   const body = event.isBase64Encoded
     ? Buffer.from(event.body || '', 'base64').toString()
@@ -109,12 +120,17 @@ function apiGatewayToReqRes(event: APIGatewayProxyEvent): {
     body: responseBody,
   });
 
-  return { req, res, getResponse };
+  const cleanup = () => {
+    socket.destroy();
+  };
+
+  return { req, res, getResponse, cleanup };
 }
 
 export const handler = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
+  let cleanup: (() => void) | undefined;
   try {
     const server = createServer();
     const transport = new StreamableHTTPServerTransport({
@@ -124,9 +140,13 @@ export const handler = async (
 
     await server.connect(transport);
 
-    const { req, res, getResponse } = apiGatewayToReqRes(event);
+    const adapter = apiGatewayToReqRes(event);
+    cleanup = adapter.cleanup;
+    const { req, res, getResponse } = adapter;
 
     if ((req as any).parseError) {
+      await transport.close();
+      await server.close();
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -156,5 +176,7 @@ export const handler = async (
         id: null,
       }),
     };
+  } finally {
+    cleanup?.();
   }
 };

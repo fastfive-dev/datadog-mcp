@@ -36,6 +36,11 @@ describe('parseRelativeTime', () => {
     expect(parseRelativeTime('7d')).toBe(expected);
   });
 
+  it('parses "2w" to 2 weeks ago', () => {
+    const expected = Math.floor(Date.now() / 1000) - 2 * 604800;
+    expect(parseRelativeTime('2w')).toBe(expected);
+  });
+
   it('passes through epoch seconds as-is', () => {
     expect(parseRelativeTime('1711180800')).toBe(1711180800);
   });

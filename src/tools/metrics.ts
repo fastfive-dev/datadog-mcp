@@ -11,8 +11,8 @@ export function registerMetricsTools(server: McpServer, client: DatadogClient): 
       title: 'Query Datadog Metrics',
       description: 'Query Datadog time-series metric data. Use Datadog query syntax, e.g. "avg:system.cpu.user{env:production}"',
       inputSchema: z.object({
-        query: z.string().describe('Datadog metric query, e.g. avg:system.cpu.user{env:production}'),
-        from: z.string().describe('Start time: epoch seconds or relative (e.g. "1h", "30m", "7d")'),
+        query: z.string().min(1).describe('Datadog metric query, e.g. avg:system.cpu.user{env:production}'),
+        from: z.string().min(1).describe('Start time: epoch seconds or relative (e.g. "1h", "30m", "7d")'),
         to: z.string().default('now').describe('End time: epoch seconds or relative. Default: "now"'),
       }),
     },
@@ -34,7 +34,7 @@ export function registerMetricsTools(server: McpServer, client: DatadogClient): 
       title: 'List Datadog Metrics',
       description: 'Search for available Datadog metric names matching a pattern.',
       inputSchema: z.object({
-        query: z.string().describe('Search pattern, e.g. "system.cpu.*"'),
+        query: z.string().min(1).describe('Search pattern, e.g. "system.cpu.*"'),
         from: z.string().default('1d').describe('Only metrics active since this time. Default: "1d"'),
       }),
     },
@@ -55,7 +55,7 @@ export function registerMetricsTools(server: McpServer, client: DatadogClient): 
       title: 'Get Metric Metadata',
       description: 'Get metadata (unit, type, description) for a specific Datadog metric.',
       inputSchema: z.object({
-        metric_name: z.string().describe('Full metric name, e.g. "system.cpu.user"'),
+        metric_name: z.string().min(1).describe('Full metric name, e.g. "system.cpu.user"'),
       }),
     },
     async ({ metric_name }) => {
