@@ -145,6 +145,8 @@ export const handler = async (
     const { req, res, getResponse } = adapter;
 
     if ((req as any).parseError) {
+      await transport.close();
+      await server.close();
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
