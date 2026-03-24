@@ -56,7 +56,14 @@ function apiGatewayToReqRes(event: APIGatewayProxyEvent): {
   req.push(null);
 
   // Attach parsed body for transport.handleRequest
-  (req as any).body = body ? JSON.parse(body) : undefined;
+  if (body) {
+    try {
+      (req as any).body = JSON.parse(body);
+    } catch {
+      (req as any).body = undefined;
+      (req as any).parseError = true;
+    }
+  }
 
   let responseBody = '';
   let responseStatus = 200;
@@ -118,6 +125,18 @@ export const handler = async (
     await server.connect(transport);
 
     const { req, res, getResponse } = apiGatewayToReqRes(event);
+
+    if ((req as any).parseError) {
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          error: { code: -32700, message: 'Parse error: invalid JSON' },
+          id: null,
+        }),
+      };
+    }
 
     await transport.handleRequest(req, res, (req as any).body);
 
