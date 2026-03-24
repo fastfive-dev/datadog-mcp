@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { DatadogClient } from '../lib/datadog-client';
 import { parseRelativeTime } from '../lib/time-utils';
+import { formatToolError } from '../lib/tool-error';
 
 export function registerLogsTools(server: McpServer, client: DatadogClient): void {
   server.registerTool(
@@ -18,10 +19,14 @@ export function registerLogsTools(server: McpServer, client: DatadogClient): voi
       }),
     },
     async ({ query, from, to, limit, sort }) => {
-      const fromEpoch = parseRelativeTime(from);
-      const toEpoch = parseRelativeTime(to);
-      const result = await client.searchLogs(query, fromEpoch, toEpoch, limit, sort);
-      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+      try {
+        const fromEpoch = parseRelativeTime(from);
+        const toEpoch = parseRelativeTime(to);
+        const result = await client.searchLogs(query, fromEpoch, toEpoch, limit, sort);
+        return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return { content: [{ type: 'text' as const, text: formatToolError(error) }], isError: true };
+      }
     },
   );
 
@@ -33,8 +38,12 @@ export function registerLogsTools(server: McpServer, client: DatadogClient): voi
       inputSchema: z.object({}),
     },
     async () => {
-      const result = await client.listLogIndexes();
-      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+      try {
+        const result = await client.listLogIndexes();
+        return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (error) {
+        return { content: [{ type: 'text' as const, text: formatToolError(error) }], isError: true };
+      }
     },
   );
 }

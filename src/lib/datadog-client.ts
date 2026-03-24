@@ -29,7 +29,7 @@ export class DatadogClient {
   }
 
   async getMetricMetadata(metricName: string) {
-    const { data } = await this.client.get(`/api/v1/metrics/${metricName}`);
+    const { data } = await this.client.get(`/api/v1/metrics/${encodeURIComponent(metricName)}`);
     return data;
   }
 
