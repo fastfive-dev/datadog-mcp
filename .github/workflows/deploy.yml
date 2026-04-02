@@ -42,7 +42,8 @@ jobs:
           sam deploy \
             --stack-name datadog-mcp \
             --region ap-northeast-2 \
-            --resolve-s3 \
+            --s3-bucket co-devops-s3-mcp-sam-artifacts \
+            --s3-prefix datadog-mcp \
             --capabilities CAPABILITY_IAM \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
